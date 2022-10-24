@@ -3,7 +3,19 @@ import React, { useEffect, useRef, useState } from "react";
 import vid2 from "/videos/2.mp4";
 
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
+import PageHeading from "./components/typography/PageHeading";
+import SmallHeading from "./components/typography/SmallHeading";
+import SubHeading from "./components/typography/SubHeading";
+import Button from "./components/Buttons/Button";
 // import { createFFmpegCore } from "../@ffmpeg/core/dist/ffmpeg-core.js";
+
+const vidsPath = [
+  "/videos/1.mp4",
+  "/videos/2.mp4",
+  "/videos/3.mp4",
+  "/videos/4.mp4",
+];
+const audsPath = ["/audios/1.mp4", "/audios/2.mp4", "/audios/3.mp4"];
 
 interface Props {}
 
@@ -153,8 +165,8 @@ const GenVid = ({}: Props) => {
   if (!ready) return <div>Loading...</div>;
   return (
     <div>
-      <p>create</p>
-      <p className="text-xl">xxx</p>
+      <PageHeading heading="Create Looped Rain Videos" />
+
       {/* {Array.from(Array(3).keys()).map((num) => {
         const src = `/videos/${num + 1}.mp4`;
 
@@ -165,6 +177,56 @@ const GenVid = ({}: Props) => {
           </video>
         );
       })} */}
+      {/* Select Vids Section */}
+      <div id="select-vid-section">
+        <SubHeading heading="Select a video" extraClass="text-left" />
+        <div className="grid grid-cols-4 gap-4">
+          {vidsPath.map((vidPath, index) => (
+            <video
+              key={index}
+              controls
+              loop
+              playsInline
+              className="w-60 col-span-1"
+              onLoadedMetadata={handleLoadedMetadata}
+            >
+              <source src={vidPath} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ))}
+        </div>
+      </div>
+
+      {/* Select Audios Section */}
+      <div id="select-aud-section">
+        <SubHeading heading="Select an audio" extraClass="text-left" />
+        <div className="grid grid-cols-4 gap-4">
+          {audsPath.map((audPath, index) => (
+            <audio controls key={index}>
+              <source src={audPath} type="audio/mp3" />
+              Your browser does not support the audio element.
+            </audio>
+          ))}
+        </div>
+      </div>
+
+      {/* duration input */}
+      <div>
+        <SubHeading heading="Select a duration" extraClass="text-left" />
+        <div>
+          <div className="flex w-1/2">
+            <input
+              type="text"
+              id="website-admin"
+              className="rounded-none rounded-l-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5 "
+              placeholder="Bonnie Green"
+            />
+            <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 rounded-r-md border border-r-0 border-gray-300">
+              minutes
+            </span>
+          </div>
+        </div>
+      </div>
 
       <video
         ref={vidRef}
@@ -223,11 +285,17 @@ const GenVid = ({}: Props) => {
         </video>
       )}
 
+      {/* <Button label="generate gif" onClick={handleGenGif} /> */}
+
+      <Button label="Generate" onClick={handleGenLoop} extraClass="my-4" />
+
       <div>
-        <button onClick={handleGenGif}>generate gif</button>
+        <Button label="Download" onClick={handleGenLoop} extraClass="my-4" />
       </div>
 
-      <button onClick={handleGenLoop}>generate loop</button>
+      <div>
+        <Button label="Randomize" onClick={handleGenLoop} extraClass="my-4" />
+      </div>
     </div>
   );
 };

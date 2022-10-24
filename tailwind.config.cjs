@@ -18,7 +18,7 @@ const grey850 = "#1F1F1F";
 const grey900 = "#121212";
 
 // main
-const primaryColor = grey900;
+const primaryColor = "#0086ff";
 const primaryHoveredColor = "#FEBA72";
 
 const bgColor = grey0;

@@ -1,0 +1,100 @@
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDocs,
+  getFirestore,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_IDY,
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// const analytics = getAnalytics(app);
+export const auth = getAuth(app);
+export const firestore = getFirestore(app);
+export const functions = getFunctions(app);
+const provider = new GoogleAuthProvider();
+
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    console.log("reslt", result);
+
+    const { email, displayName, photoURL, uid, providerData } = result.user;
+
+    const newUser = {
+      uid,
+      name: displayName,
+      email,
+      avatarUrl: photoURL,
+      provider: providerData[0].providerId,
+    };
+    console.log("new user", newUser);
+
+    // const docRef = await addDoc(collection(firestore, "users"), newUser);
+    const userRef = doc(firestore, "users", uid);
+
+    console.log("user ref", userRef);
+    const docRef = await setDoc(userRef, newUser);
+  } catch (error) {
+    console.log("error", error);
+  }
+};
+
+export const logout = () => {
+  const response = signOut(auth);
+  console.log("response", response);
+  console.log("sign out");
+};
+
+export const openCustomerPortal = async () => {
+  console.log("open portal");
+  console.log("1");
+  const functionRef = httpsCallable(
+    functions,
+    "ext-firestore-stripe-payments-createPortalLink"
+  );
+  console.log("2");
+  console.log("function ref", functionRef);
+  const { data } = await functionRef({
+    returnUrl: window.location.origin,
+  });
+  console.log("3");
+
+  console.log("data in portal", data);
+
+  window.location.assign((data as any)?.url); // todo
+};
+
+export const fetchSubscription = async (uid: string) => {
+  const subsRef = collection(firestore, "users", uid, "subscriptions");
+  const subsQuery = query(
+    subsRef,
+    where("status", "in", ["trialing", "active", "past_due", "unpaid"])
+  );
+
+  const subs = await getDocs(subsQuery);
+  console.log("length", subs.docs);
+  if (subs.docs.length > 0) return subs.docs[0].data();
+
+  return null;
+};
