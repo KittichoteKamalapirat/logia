@@ -14,7 +14,7 @@ const Navbar = ({}: Props) => {
   const [user, userLoading] = useAuthState(auth);
 
   return (
-    <div className="flex justify-center py-2 px-10 w-full top-0 fixed bg-primary text-grey-0 z-50">
+    <div className="flex justify-center py-2 px-10 w-full top-0 fixed bg-primary-500 text-grey-0 z-50">
       <div className="flex justify-between items-center md:max-w-7xl w-full ">
         <div className="flex">
           {/* <div className="mr-4">logo image</div> */}

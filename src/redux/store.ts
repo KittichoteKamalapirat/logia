@@ -2,14 +2,14 @@ import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
 import mockupReducer from "./slices/mockupReducer";
 import postsReducer from "./slices/postsReducer";
-import uploadReducer from "./slices/uploadReducer";
+import userReducer from "./slices/userReducer";
 
 // ...
 const store = configureStore({
   reducer: {
     posts: postsReducer,
-    upload: uploadReducer,
     mockups: mockupReducer,
+    user: userReducer,
   },
 });
 

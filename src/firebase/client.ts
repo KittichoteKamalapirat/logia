@@ -1,8 +1,11 @@
+import { v4 as uuidv4 } from "uuid";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
 import {
@@ -15,16 +18,7 @@ import {
   where,
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_IDY,
-};
+import { firebaseConfig } from "./config";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -36,8 +30,9 @@ const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
   try {
+    console.log("sign in");
     const result = await signInWithPopup(auth, provider);
-    console.log("reslt", result);
+    console.log("result", result);
 
     const { email, displayName, photoURL, uid, providerData } = result.user;
 
@@ -48,13 +43,28 @@ export const signInWithGoogle = async () => {
       avatarUrl: photoURL,
       provider: providerData[0].providerId,
     };
-    console.log("new user", newUser);
 
+    console.log("newUser", newUser);
     // const docRef = await addDoc(collection(firestore, "users"), newUser);
     const userRef = doc(firestore, "users", uid);
 
-    console.log("user ref", userRef);
     const docRef = await setDoc(userRef, newUser);
+  } catch (error) {
+    console.log("error", error);
+  }
+};
+
+export const registerWithEmail = async (email: string, password: string) => {
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    console.log("error", error);
+  }
+};
+
+export const loginWithEmail = async (email: string, password: string) => {
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     console.log("error", error);
   }
@@ -62,25 +72,17 @@ export const signInWithGoogle = async () => {
 
 export const logout = () => {
   const response = signOut(auth);
-  console.log("response", response);
-  console.log("sign out");
 };
 
 export const openCustomerPortal = async () => {
-  console.log("open portal");
-  console.log("1");
   const functionRef = httpsCallable(
     functions,
     "ext-firestore-stripe-payments-createPortalLink"
   );
-  console.log("2");
-  console.log("function ref", functionRef);
+
   const { data } = await functionRef({
     returnUrl: window.location.origin,
   });
-  console.log("3");
-
-  console.log("data in portal", data);
 
   window.location.assign((data as any)?.url); // todo
 };
@@ -93,7 +95,7 @@ export const fetchSubscription = async (uid: string) => {
   );
 
   const subs = await getDocs(subsQuery);
-  console.log("length", subs.docs);
+
   if (subs.docs.length > 0) return subs.docs[0].data();
 
   return null;

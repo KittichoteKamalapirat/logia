@@ -18,12 +18,6 @@ export const createCheckoutSession = async (userUId: string) => {
       "checkout_sessions"
     );
 
-    console.log("proces env", process.env);
-    console.log("userUId", userUId);
-
-    console.log("1");
-    console.log("newCheckoutSession", newCheckoutSession);
-
     const docRef = await addDoc(collectionRef, newCheckoutSession);
 
     console.log("2");

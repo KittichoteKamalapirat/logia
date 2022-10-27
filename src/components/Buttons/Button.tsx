@@ -79,7 +79,7 @@ const useClassName = ({
 
     case ButtonTypes.PRIMARY:
     default:
-      return `bg-primary hover:bg-blurple-hovered text-white ${commonClass}`;
+      return `bg-primary-500 hover:bg-blurple-hovered text-white ${commonClass}`;
   }
 };
 
@@ -150,10 +150,10 @@ Button.defaultProps = {
   buttonType: HTMLButtonType.BUTTON,
   disabled: false,
   borderRadius: "rounded-5px",
-  borderColour: "border-primary",
+  borderColour: "border-primary-500",
   borderWidth: "border",
   fontSize: "text-13px",
-  fontColour: "text-primary",
+  fontColour: "text-primary-500",
 };
 
 export default Button;

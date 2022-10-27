@@ -11,7 +11,9 @@ export const Loading: React.FC<LoadingProps> = ({ text }) => {
     <div className="flex justify-center items-center">
       <div className="flex justify-center items-center">
         <Spinner />
-        <p className="text-primary font-bold">{text ? text : "Loading..."}</p>
+        <p className="text-primary-500 font-bold">
+          {text ? text : "Loading..."}
+        </p>
       </div>
     </div>
   );

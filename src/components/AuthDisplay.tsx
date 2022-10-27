@@ -76,7 +76,7 @@ const AuthDisplay = ({}: Props) => {
           >
             <SmallHeading
               fontSize="text-md"
-              heading={`Hi, ${user.displayName?.split(" ")[0]}`}
+              heading={`Hi, ${user.email?.split("@")[0]}`}
             />
           </Dropdown>
         </div>

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import React, { ReactNode } from "react";
 import Button, { ButtonTypes } from "./Button";
 
@@ -19,14 +20,14 @@ const LinkButton = ({
   type = ButtonTypes.PRIMARY,
 }: Props) => {
   return (
-    <a href={href || { pathname }}>
+    <Link to={href || { pathname }}>
       <Button
         label={label}
         startIcon={leftIcon}
         type={type}
         extraClass={`${extraClass}`}
       />
-    </a>
+    </Link>
   );
 };
 
