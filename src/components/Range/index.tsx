@@ -23,7 +23,7 @@ const Range = ({
 }: Props) => {
   return (
     <div className="flex items-center">
-      <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+      <label className="block mb-2 text-sm font-medium text-gray-900">
         {label}
       </label>
 
@@ -37,7 +37,7 @@ const Range = ({
           value={value}
           onChange={onChange}
           onInput={onInput}
-          className="col-span-5 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+          className="col-span-5 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
         />
         <p className="col-span-1 text-primary-500 text-xl ml-2 font-bold">
           {Math.round(value * 10) / 10} {unit}

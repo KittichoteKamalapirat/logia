@@ -8,7 +8,6 @@ import Range from "./components/Range";
 import Spinner from "./components/Spinner";
 import PageHeading from "./components/typography/PageHeading";
 import SubHeading from "./components/typography/SubHeading";
-// import { createFFmpegCore } from "../@ffmpeg/core/dist/ffmpeg-core.js";
 
 interface FormValues {
   videoPath: string;
@@ -23,6 +22,7 @@ const defaultValues: FormValues = {
 };
 
 const vidsPath = [
+  "/videos/1-com.mp4",
   "/videos/1.mp4",
   "/videos/2.mp4",
   "/videos/3.mp4",
@@ -32,19 +32,18 @@ const audsPath = ["/audios/1.mp3", "/audios/2.mp3", "/audios/3.mp3"];
 
 interface Props {}
 
-// const ffmpeg = createFFmpeg({ log: true });
 const ffmpeg = createFFmpeg({
-  log: false,
-  //   corePath: "./../../../../public/@ffmpeg/core/dist/ffmpeg-core.js", // in public
+  log: true,
 });
 
 const GenVid = ({}: Props) => {
   const [ready, setReady] = useState(false);
-  const [video, setVideo] = useState();
+  const downloadLinkRef = useRef<HTMLAnchorElement>();
+
   const [isLoading, setIsLoading] = useState(false);
-  const [gif, setGif] = useState("");
+
   const [loop, setLoop] = useState("");
-  const [aud, setAud] = useState("");
+
   const vidRef = useRef();
 
   const {
@@ -66,54 +65,15 @@ const GenVid = ({}: Props) => {
     }
   };
 
-  console.log("form errors", errors);
-
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
       setIsLoading(true);
       console.log("data", data);
-      // await handleGenLoop(data);
+      await handleGenLoop(data);
       setIsLoading(false);
     } catch (error) {
       console.log("⛔  error registering");
     }
-  };
-
-  const handleLoadedMetadata = () => {
-    const video = vidRef.current;
-    if (!video) return;
-    setVideo(video);
-    console.log(`The video is ${video?.duration} seconds long.`);
-  };
-
-  const handleGenGif = async () => {
-    const res = await fetch("http://127.0.0.1:5173/videos/2.mp4");
-    const blob = await res.blob();
-
-    // Write the file to memory
-    ffmpeg.FS("writeFile", "test.mp4", await fetchFile(blob));
-
-    // Run the FFMpeg command
-    await ffmpeg.run(
-      "-i", // input
-      "test.mp4",
-      "-t", // length of the vid
-      "2.5",
-      "-ss", // starting second
-      "2.0",
-      "-f", // format
-      "gif",
-      "out.gif" // output
-    );
-
-    // Read the result
-    const data = ffmpeg.FS("readFile", "out.gif");
-
-    // Create a URL
-    const url = URL.createObjectURL(
-      new Blob([data.buffer], { type: "image/gif" })
-    );
-    setGif(url);
   };
 
   const handleGenLoop = async (input: FormValues) => {
@@ -127,6 +87,15 @@ const GenVid = ({}: Props) => {
       });
       const vidBlob = await vidRes.blob();
 
+      const imgRes = await fetch("/images/2.jpg", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "cors",
+      });
+      const imgBlob = await imgRes.blob();
+
       const audRes = await fetch(input.audioPath);
       const audBlob = await audRes.blob();
 
@@ -134,49 +103,161 @@ const GenVid = ({}: Props) => {
       const audDuration = await getBlobDuration(audBlob);
 
       const loopNum = Math.ceil(
-        (parseInt(input.durationHours) * 60 * 60) / vidDuration
+        (parseFloat(input.durationHours) * 60 * 60) / vidDuration
       );
+      console.log("loop num", loopNum);
 
       // Write the file to memory
       ffmpeg.FS("writeFile", "video.mp4", await fetchFile(vidBlob));
+      console.log("wrote video");
+      ffmpeg.FS("writeFile", "image.jpg", await fetchFile(imgBlob));
+      console.log("wrote image");
+
       ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audBlob));
 
+      console.log("wrote audio");
+
+      // video x audio
+      // await ffmpeg.run(
+      //   "-stream_loop", // input
+      //   "2", // loop video infinitely
+      //   "-i", // input
+      //   "video.mp4",
+      //   "-stream_loop", // loop audio infinitely
+      //   "-1",
+      //   "-i", // input
+      //   "audio.mp3",
+      //   "-c:v", // codec (compress) video
+      //   "copy", // type of cypress (h.264, h.265, vp9, copy) ex. h264
+      //   "-c:a", // codec audio
+      //   "aac", // type of cypress (mpeg-4, aac,wav,mp3,etc)
+      //   "-map",
+      //   "0:v:0", // <inputNo>:<streamNo> pick the video of the first input stream
+      //   "-map",
+      //   "1:a:0", // pick the audio of the second input stream
+      //   "-shortest", // select the shortest length of input streams, which is the video legnth since the audio will be looped infinity
+      //   // "-fs", limit the output size
+      //   // "1800M",
+      //   "out.mp4" // output
+      // );
+
+      // image x audio => not working give audio as output somehow
+      // await ffmpeg.run(
+      //   "-loop", // input
+      //   "1", // loop video infinitely
+      //   "-i", // input
+      //   "image.jpg",
+      //   "-stream_loop", // loop audio infinitely
+      //   "1",
+      //   "-i", // input
+      //   "audio.mp3",
+      //   "-c:v",
+      //   "copy",
+      //   "-tune",
+      //   "stillimage",
+      //   "-shortest", // select the shortest length of input streams, which is the video legnth since the audio will be looped infinity
+      //   "-c:a", // codec audio = -acodec
+      //   "aac", // type of compress (mpeg-4, aac,wav,mp3,etc)
+      //   // "-fs",
+      //   // "1000M",
+      //   "out.mp4" // output
+      // );
+
+      // image x audio (simplify)
+      // await ffmpeg.run("-i", "image.jpg", "-i", "audio.mp3", "out.mp4");
+
+      // this one works! => 20 mins 0.04 gb
+
+      // await ffmpeg.run(
+      //   "-r",
+      //   "1",
+      //   "-loop",
+      //   "1",
+      //   "-i",
+      //   "image.jpg",
+      //   "-stream_loop",
+      //   "10",
+      //   "-i",
+      //   "audio.mp3",
+      //   "-acodec",
+      //   "copy",
+      //   "-r",
+      //   "1",
+      //   "-shortest",
+      //   "-vf",
+      //   "scale=1280:720",
+      //   "out.mp4"
+      // );
+
+      // also works, pretty much the same
       await ffmpeg.run(
-        "-stream_loop", // input
-        loopNum.toString(), // loop video infinitely
-        "-i", // input
-        "video.mp4",
-        "-stream_loop", // loop audio infinitely
-        "-1",
-        "-i", // input
+        "-r",
+        "1",
+        "-loop",
+        "1",
+        "-y",
+        "-i",
+        "image.jpg",
+        "-stream_loop",
+        "10",
+        "-i",
         "audio.mp3",
-        "-c:v", // codec (compress) video
-        "copy", // type of cypress (h.264, h.265, vp9)
-        "-c:a", // codec audio
-        "aac", // type of cypress (mpeg-4, aac,wav,mp3,etc)
-        "-map",
-        "0:v:0", // <inputNo>:<streamNo> pick the video of the first input stream
-        "-map",
-        "1:a:0", // pick the audio of the second input stream
-        "-shortest", // select the shortest length of input streams, which is the video legnth since the audio will be looped infinity
-        "out.mp4" // output
+        "-acodec",
+        "copy",
+        "-r",
+        "1",
+        "-vcodec",
+        "libx264",
+        "-shortest",
+        "out.mp4"
       );
 
+      // await ffmpeg.run(
+      //   "-stream_loop", // input
+      //   "200", // loop video infinitely
+      //   "-i", // input
+      //   "video.mp4",
+      //   "-stream_loop", // loop audio infinitely
+      //   "-1",
+      //   "-i", // input
+      //   "audio.mp3",
+      //   "-c:v", // codec (compress) video = -vcodec
+      //   "copy", // type of cypress (h.264, h.265, vp9, copy) ex. h264
+      //   // "-crf", // -crf
+      //   // "30", // the higher, the lower bitrate, the smaller 0-51 is good
+      //   "-c:a", // codec audio = -acodec
+      //   "aac", // type of cypress (mpeg-4, aac,wav,mp3,etc)
+      //   "-map",
+      //   "0:v:0", // <inputNo>:<streamNo> pick the video of the first input stream
+      //   "-map",
+      //   "1:a:0", // pick the audio of the second input stream
+      //   "-shortest", // select the shortest length of input streams, which is the video legnth since the audio will be looped infinity
+      //   // "-fs", limit the output size
+      //   // "1800M",
+      //   "out.mp4" // output
+      // );
+
+      console.log("combined");
       // Read the result
       const data = ffmpeg.FS("readFile", "out.mp4");
+
+      console.log("here is data", data);
 
       // Create a URL
       const url = URL.createObjectURL(
         new Blob([data.buffer], { type: "video/mp4" })
       );
-      setLoop(url);
 
-      // // audio test delete this later
-      // const audioData = ffmpeg.FS("readFile", "audio.mp3");
-      // const audUrl = URL.createObjectURL(
-      //   new Blob([audioData.buffer], { type: "audio/mpeg" })
+      // if download
+      // const link = downloadLinkRef.current as HTMLAnchorElement;
+      // link.href = URL.createObjectURL(
+      //   new Blob([data.buffer], { type: "video/mp4;codecs=H264" })
       // );
-      // setAud(audUrl);
+      // link.download = `logia-video-${input.durationHours}-hrs-vid`;
+      // link.click();
+
+      console.log("url", url);
+      setLoop(url);
     } catch (error) {
       console.log("error", error);
     }
@@ -185,12 +266,6 @@ const GenVid = ({}: Props) => {
   useEffect(() => {
     loadFFmpeg();
   }, []);
-
-  // // save video ref to a video state
-  // useEffect(() => {
-  //   if (!vidRef.current) return;
-  //   setVideo(vidRef.current);
-  // }, [vidRef.current]);
 
   if (!ready) return <div>Loading...</div>;
   return (
@@ -212,8 +287,7 @@ const GenVid = ({}: Props) => {
             const selectedClass =
               "border-2 border-primary-500 border-solid rounded-md bg-primary-50";
             const isSelected = currentVidPath === vidPath;
-            console.log("cur", currentVidPath);
-            console.log("map", vidPath);
+
             return (
               <div
                 key={index}
@@ -235,13 +309,7 @@ const GenVid = ({}: Props) => {
                     <br></br>
                   </div>
 
-                  <video
-                    key={index}
-                    controls
-                    loop
-                    playsInline
-                    onLoadedMetadata={handleLoadedMetadata}
-                  >
+                  <video key={index} controls loop playsInline>
                     <source src={vidPath} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
@@ -293,7 +361,7 @@ const GenVid = ({}: Props) => {
 
                 <label
                   htmlFor={audPath}
-                  className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                  className="ml-2 text-sm font-medium text-gray-900"
                 >
                   <div>
                     <br></br>
@@ -326,20 +394,7 @@ const GenVid = ({}: Props) => {
           extraClass="text-left text-xl mb-4 font-bold"
         />
         <div>
-          <div className="flex w-full">
-            {/* <input
-              type="number"
-              id="website-admin"
-              {...register("durationHours")}
-              className="rounded-none rounded-l-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5 "
-              placeholder="Bonnie Green"
-            />
-
-            <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 rounded-r-md border border-r-0 border-gray-300">
-              minutes
-            </span>
-            */}
-          </div>
+          <div className="flex w-full"></div>
 
           <Controller
             control={control}
@@ -375,63 +430,19 @@ const GenVid = ({}: Props) => {
         )}
       </div>
 
-      {/* <video
-        ref={vidRef}
-        key="asdfxx"
-        controls
-        loop
-        playsInline
-        className="w-60"
-        onLoadedMetadata={handleLoadedMetadata}
-      >
-        <source src="/videos/1.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-
-      <video
-        key="asdf"
-        controls
-        loop
-        playsInline
-        className="w-60"
-        onLoadedMetadata={handleLoadedMetadata}
-      >
-        <source src={vid2} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video> */}
-      {/* 
-      {Array.from(Array(3).keys()).map((num) => {
-        const src = `/audios/${num + 1}.mp3`;
-
-        return (
-          <audio controls key={num}>
-            <source src={src} type="audio/mp3" />
-            Your browser does not support the audio element.
-          </audio>
-        );
-      })} */}
-
-      {aud && (
-        <audio controls key={"asdf3d"}>
-          <source src={aud} type="audio/mp3" />
-          Your browser does not support the audio element.
-        </audio>
-      )}
-      {/* {gif && <img src={gif} width="250" />} */}
-
       {loop ? (
-        <video
-          key="asdadsff"
-          controls
-          loop
-          playsInline
-          className="w-60"
-          onLoadedMetadata={handleLoadedMetadata}
-        >
+        <video key="asdadsff" controls loop playsInline className="w-60">
           <source src={loop} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       ) : null}
+
+      {/* {loop ? (
+        <audio controls key="asdfasdfadsf" className="w-full">
+          <source src={loop} type="audio/mp3" />
+          Your browser does not support the audio element.
+        </audio>
+      ) : null} */}
 
       <div className="my-10">
         {isLoading ? (
@@ -450,9 +461,9 @@ const GenVid = ({}: Props) => {
         )}
       </div>
 
-      <div>
-        {/* <Button label="Randomize" onClick={handleGenLoop} extraClass="my-4" /> */}
-      </div>
+      <a ref={downloadLinkRef} className={`${loop ? "" : "invisible"}`}>
+        Download
+      </a>
     </div>
   );
 };

@@ -18,7 +18,7 @@ const Dropdown = ({ children, items, isOpen, onClick }: Props) => {
       <button
         id="dropdownDefault"
         data-dropdown-toggle="dropdown"
-        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center"
         type="button"
       >
         {children}
@@ -43,10 +43,10 @@ const Dropdown = ({ children, items, isOpen, onClick }: Props) => {
         id="dropdown"
         className={`${
           isOpen ? "block" : "hidden"
-        } absolute z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700`}
+        } absolute z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow`}
       >
         <ul
-          className="py-1 text-sm text-gray-700 dark:text-gray-200"
+          className="py-1 text-sm text-gray-700"
           aria-labelledby="dropdownDefault"
         >
           {items.map((item) => (
@@ -54,7 +54,7 @@ const Dropdown = ({ children, items, isOpen, onClick }: Props) => {
               <a
                 href={item.href || undefined}
                 onClick={item.itemOnClick || undefined}
-                className="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                className="block py-2 px-4 hover:bg-gray-100"
               >
                 {item.label}
               </a>
