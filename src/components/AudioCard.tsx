@@ -1,8 +1,7 @@
-import { Basic } from "unsplash-js/dist/methods/photos/types";
 import dayjs from "dayjs";
 import { Sound } from "../types/FreeSound";
-import Tag from "./Tag";
 import { ReviewStars } from "./ReviewStars";
+import Tag from "./Tag";
 interface Props {
   sound: Sound;
 }
@@ -66,14 +65,7 @@ const AudioCard = ({ sound }: Props) => {
               </article>
 
               <article className="mt-5 md:mt-0">
-                <a
-                  href={`https://instagram.com/${user.instagram_username}`}
-                  className="text-sm opacity-75"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  filesize: {Math.floor(filesize / 1000000)} Mb
-                </a>
+                <p>filesize: {Math.floor(filesize / 1000000)} Mb</p>
 
                 <ReviewStars reviewScore={avg_rating} />
               </article>

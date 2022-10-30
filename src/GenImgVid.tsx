@@ -14,6 +14,7 @@ import { unsplash } from "./unsplash/unsplash";
 import { FreeSoundResponse } from "./types/FreeSound";
 import Searchbar from "./components/Searchbar";
 import AudioCard from "./components/AudioCard";
+import LinkButton from "./components/Buttons/LinkButton";
 
 interface FormValues {
   imageUrl: string;
@@ -43,7 +44,7 @@ const GenImgVid = ({}: Props) => {
   const [freeSoundPage, setfreeSoundPage] = useState(1);
   const [photos, setPhotos] = useState<Basic[]>();
   const [unsplashQuery, setUnsplashQuery] = useState("rain");
-  const downloadLinkRef = useRef<HTMLAnchorElement>();
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
   // freesound
   const [freeSoundResponse, setFreeSoundResponse] =
@@ -53,6 +54,9 @@ const GenImgVid = ({}: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [loop, setLoop] = useState("");
+
+  console.log("-------------------------------------");
+  console.log("loop", loop);
 
   const vidRef = useRef();
 
@@ -176,8 +180,8 @@ const GenImgVid = ({}: Props) => {
         mode: "cors",
       });
       const imgBlob = await imgRes.blob();
-
       const audRes = await fetch(input.audioPath);
+
       const audBlob = await audRes.blob();
 
       const audDuration = await getBlobDuration(audBlob);
@@ -197,7 +201,7 @@ const GenImgVid = ({}: Props) => {
 
       console.log("wrote audio");
 
-      // this one works! => 20 mins 0.04 gb
+      // this one works! => 20mins vid 0.04 gb
 
       await ffmpeg.run(
         "-r",
@@ -207,11 +211,12 @@ const GenImgVid = ({}: Props) => {
         "-i",
         "image.jpg",
         "-stream_loop",
-        "10",
+        "1",
+        // String(loopNum), // total will be 1 + loopNum
         "-i",
         "audio.mp3",
         "-acodec",
-        "copy",
+        "aac", // if copy => no sound for quicktime, but yes for vlc
         "-r",
         "1",
         "-shortest",
@@ -220,7 +225,7 @@ const GenImgVid = ({}: Props) => {
         "out.mp4"
       );
 
-      // // also works, pretty much the same
+      // also works, pretty much the same
       // await ffmpeg.run(
       //   "-r",
       //   "1",
@@ -254,11 +259,17 @@ const GenImgVid = ({}: Props) => {
       );
 
       // if download
-      // const link = downloadLinkRef.current as HTMLAnchorElement;
-      // link.href = URL.createObjectURL(
-      //   new Blob([data.buffer], { type: "video/mp4;codecs=H264" })
-      // );
-      // link.download = `logia-video-${input.durationHours}-hrs-vid`;
+      const link = downloadLinkRef.current as HTMLAnchorElement;
+      // H265 works but no sound
+      // H264 works but no sound
+      //
+      const linkHref = URL.createObjectURL(
+        new Blob([data.buffer], { type: "video/mp4" })
+      );
+
+      console.log("link href", linkHref);
+      link.href = linkHref;
+      link.download = `logia-video-hrs-vid`;
       // link.click();
 
       console.log("url", url);
@@ -477,53 +488,59 @@ const GenImgVid = ({}: Props) => {
       </div>
 
       {/* duration input */}
-      <SubHeading
-        heading="3. Select a duration"
-        extraClass="text-left text-xl mb-4 font-bold"
-      />
-      <div
-        id="select-duration-section"
-        className="p-10 my-4 border-2 border-grey-50 border-solid rounded-md"
-      >
-        <div>
-          <div className="flex w-full"></div>
 
-          <Controller
-            control={control}
-            name="durationHours"
-            render={({
-              field: { onChange, onBlur, value, name, ref },
-              fieldState: { invalid, isTouched, isDirty, error },
-              formState,
-            }) => (
-              <Range
-                unit="Hours"
-                value={parseFloat(value)}
-                onChange={onChange}
-                min={0}
-                step={0.5}
-                max={12}
-              />
-            )}
-            rules={{
-              required: {
-                value: true,
-                message: "Please select the duration of the video",
-              },
-              min: {
-                value: 0.5,
-                message: "Duration must be more than 0",
-              },
-            }}
-          />
+      <div id="select-duration-section" className="mt-10">
+        <SubHeading
+          heading="3. Select a duration"
+          extraClass="text-left text-xl mb-4 font-bold"
+        />
+        <div className="p-10 my-4 border-2 border-grey-50 border-solid rounded-md">
+          <div>
+            <div className="flex w-full"></div>
+
+            <Controller
+              control={control}
+              name="durationHours"
+              render={({
+                field: { onChange, onBlur, value, name, ref },
+                fieldState: { invalid, isTouched, isDirty, error },
+                formState,
+              }) => (
+                <Range
+                  unit="Hours"
+                  value={parseFloat(value)}
+                  onChange={onChange}
+                  min={0}
+                  step={0.5}
+                  max={12}
+                />
+              )}
+              rules={{
+                required: {
+                  value: true,
+                  message: "Please select the duration of the video",
+                },
+                min: {
+                  value: 0.5,
+                  message: "Duration must be more than 0",
+                },
+              }}
+            />
+          </div>
+          {errors.durationHours && (
+            <p className="text-red">{errors.durationHours.message}</p>
+          )}
         </div>
-        {errors.durationHours && (
-          <p className="text-red">{errors.durationHours.message}</p>
-        )}
       </div>
 
       {loop ? (
-        <video key="asdadsff" controls loop playsInline className="w-60">
+        <video
+          key="asdadsff"
+          controls
+          loop
+          playsInline
+          className="w-1/2 mx-auto"
+        >
           <source src={loop} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
@@ -540,15 +557,20 @@ const GenImgVid = ({}: Props) => {
             </div>
           </div>
         ) : (
-          <div className="flex justify-center mt-6">
-            <Button label="Generate" onClick={handleSubmit(onSubmit)} />
+          <div className="flex justify-center mt-6 gap-2">
+            <Button
+              label="Generate"
+              onClick={handleSubmit(onSubmit)}
+              fontSize="text-xl"
+              extraClass={`${loop ? "hidden" : ""}`}
+            />
           </div>
         )}
-      </div>
 
-      <a ref={downloadLinkRef} className={`${loop ? "" : "invisible"}`}>
-        Download
-      </a>
+        <a ref={downloadLinkRef} className={`${loop ? "" : "invisible"}`}>
+          <Button label="Download" fontSize="text-xl" />
+        </a>
+      </div>
     </div>
   );
 };
