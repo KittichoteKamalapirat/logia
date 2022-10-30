@@ -3,10 +3,19 @@ interface Props {
   fontSize: string;
   fontStyle: string;
   fontColour: string;
+  extraClass: string;
 }
 
-const PageHeading = ({ heading, fontSize, fontStyle, fontColour }: Props) => (
-  <h1 className={`${fontSize} ${fontStyle} ${fontColour}`}>{heading}</h1>
+const PageHeading = ({
+  heading,
+  fontSize,
+  fontStyle,
+  fontColour,
+  extraClass,
+}: Props) => (
+  <h1 className={`${fontSize} ${fontStyle} ${fontColour} ${extraClass}`}>
+    {heading}
+  </h1>
 );
 
 PageHeading.defaultProps = {
@@ -14,6 +23,7 @@ PageHeading.defaultProps = {
   fontSize: "text-2xl",
   fontStyle: "font-TRegular",
   fontColour: "",
+  extraClass: "font-bold",
 };
 
 export default PageHeading;

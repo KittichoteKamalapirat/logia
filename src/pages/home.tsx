@@ -1,12 +1,12 @@
 import Layout from "../components/layouts/Layout";
-import GenVid from "../GenVid";
+import GenImgVid from "../GenImgVid";
 
 interface Props {}
 
 const Home = ({}: Props) => {
   return (
     <Layout>
-      <GenVid />
+      <GenImgVid />
     </Layout>
   );
 };

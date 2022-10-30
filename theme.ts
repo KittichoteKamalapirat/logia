@@ -7,7 +7,7 @@
 
 export const green = "#57B65F";
 export const blue = "#4E97F3";
-
+export const orange = "#FFBF00";
 // white grey and black
 export const grey0 = "#FFFFFF";
 export const grey50 = "#F5F0F0";

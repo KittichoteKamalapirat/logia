@@ -33,7 +33,7 @@ const primaryColor800 = "#004C8F";
 const primaryColor850 = "#003555";
 const primaryColor900 = "#00213D";
 
-const primaryHoveredColor = "#FEBA72";
+const primaryHoveredColor = primaryColor600;
 
 const bgColor = grey0;
 const primaryTextColor = grey900;
@@ -91,8 +91,8 @@ module.exports = {
           900: grey900,
         },
 
-        primary: primaryColor,
         primary: {
+          primary: primaryColor,
           50: primaryColor50,
           100: primaryColor100,
           200: primaryColor200,
