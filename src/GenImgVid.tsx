@@ -4,17 +4,18 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { Basic } from "unsplash-js/dist/methods/photos/types";
+import AudioCard from "./components/AudioCard";
 import Button from "./components/Buttons/Button";
 import ImgCard from "./components/ImgCard";
 import Range from "./components/Range";
+import Searchbar from "./components/Searchbar";
 import Spinner from "./components/Spinner";
 import PageHeading from "./components/typography/PageHeading";
 import SubHeading from "./components/typography/SubHeading";
-import { unsplash } from "./unsplash/unsplash";
+import ProgressBar from "./ProgressBar";
 import { FreeSoundResponse } from "./types/FreeSound";
-import Searchbar from "./components/Searchbar";
-import AudioCard from "./components/AudioCard";
-import LinkButton from "./components/Buttons/LinkButton";
+import { unsplash } from "./unsplash/unsplash";
+import { brandName } from "./constants/brand";
 
 interface FormValues {
   imageUrl: string;
@@ -28,12 +29,10 @@ const defaultValues: FormValues = {
   durationHours: "0",
 };
 
-const audsPath = ["/audios/1.mp3", "/audios/2.mp3", "/audios/3.mp3"];
-
 interface Props {}
 
 const ffmpeg = createFFmpeg({
-  log: true,
+  log: false,
 });
 
 const GenImgVid = ({}: Props) => {
@@ -42,6 +41,7 @@ const GenImgVid = ({}: Props) => {
   // unsplash
   const [unsplashPage, setUnsplashPage] = useState(1);
   const [freeSoundPage, setfreeSoundPage] = useState(1);
+  const [progressPercent, setProgressPercent] = useState(0);
   const [photos, setPhotos] = useState<Basic[]>();
   const [unsplashQuery, setUnsplashQuery] = useState("rain");
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
@@ -54,11 +54,6 @@ const GenImgVid = ({}: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [loop, setLoop] = useState("");
-
-  console.log("-------------------------------------");
-  console.log("loop", loop);
-
-  const vidRef = useRef();
 
   const {
     control,
@@ -73,6 +68,7 @@ const GenImgVid = ({}: Props) => {
   const loadFFmpeg = async () => {
     try {
       await ffmpeg.load();
+
       setReady(true);
     } catch (error) {
       console.log("load error", error);
@@ -184,11 +180,21 @@ const GenImgVid = ({}: Props) => {
 
       const audBlob = await audRes.blob();
 
-      const audDuration = await getBlobDuration(audBlob);
+      const audDuration = await getBlobDuration(audBlob); // in seconds
 
-      const loopNum = Math.ceil(
-        (parseFloat(input.durationHours) * 60 * 60) / audDuration
-      );
+      const loopNum =
+        input.durationHours !== "12"
+          ? Math.ceil((parseFloat(input.durationHours) * 60 * 60) / audDuration)
+          : Math.floor(
+              (parseFloat(input.durationHours) * 60 * 60) / audDuration
+            ); // Youtube maximum is 12 hours
+
+      // time in secs of the output
+      ffmpeg.setProgress((arg) => {
+        const seconds = parseFloat(input.durationHours) * 60 * 60;
+        const percent = Math.floor(((arg as any).time * 100) / seconds);
+        setProgressPercent(percent);
+      });
 
       console.log("creating a ", input.durationHours, " hours video");
       console.log("loop num", loopNum);
@@ -211,8 +217,8 @@ const GenImgVid = ({}: Props) => {
         "-i",
         "image.jpg",
         "-stream_loop",
-        "1",
-        // String(loopNum), // total will be 1 + loopNum
+        // "1",
+        String(loopNum), // total will be 1 + loopNum
         "-i",
         "audio.mp3",
         "-acodec",
@@ -225,34 +231,9 @@ const GenImgVid = ({}: Props) => {
         "out.mp4"
       );
 
-      // also works, pretty much the same
-      // await ffmpeg.run(
-      //   "-r",
-      //   "1",
-      //   "-loop",
-      //   "1",
-      //   "-y",
-      //   "-i",
-      //   "image.jpg",
-      //   "-stream_loop",
-      //   "10",
-      //   "-i",
-      //   "audio.mp3",
-      //   "-acodec",
-      //   "copy",
-      //   "-r",
-      //   "1",
-      //   "-vcodec",
-      //   "libx264",
-      //   "-shortest",
-      //   "out.mp4"
-      // );
-
-      console.log("combined");
       // Read the result
       const data = ffmpeg.FS("readFile", "out.mp4");
 
-      console.log("here is data", data);
       // Create a URL
       const url = URL.createObjectURL(
         new Blob([data.buffer], { type: "video/mp4" })
@@ -267,12 +248,10 @@ const GenImgVid = ({}: Props) => {
         new Blob([data.buffer], { type: "video/mp4" })
       );
 
-      console.log("link href", linkHref);
       link.href = linkHref;
-      link.download = `logia-video-hrs-vid`;
-      // link.click();
+      link.download = `${freeSoundQuery}-video-${brandName}`;
+      link.click();
 
-      console.log("url", url);
       setLoop(url);
     } catch (error) {
       console.log("error", error);
@@ -549,11 +528,17 @@ const GenImgVid = ({}: Props) => {
       <div className="my-10">
         {isLoading ? (
           <div className="flex justify-center items-center">
-            <div className="flex flex-col justify-center items-center">
-              <Spinner size="h-20 w-20" />
-              <p className="text-primary-500 text-xl font-bold mt-8">
-                {"Generating...This might take a few minutes"}
-              </p>
+            <div className="flex flex-col justify-center items-center w-full">
+              <Spinner size="h-10 w-10" />
+              <div className="text-center">
+                <p className="text-primary-500 text-xl font-bold mt-4">
+                  Generating...
+                </p>
+                <p className="text-primary-500 text-lg font-bold">
+                  This might take a few minutes
+                </p>
+              </div>
+              <ProgressBar percent={progressPercent} />
             </div>
           </div>
         ) : (
@@ -567,9 +552,11 @@ const GenImgVid = ({}: Props) => {
           </div>
         )}
 
-        <a ref={downloadLinkRef} className={`${loop ? "" : "invisible"}`}>
-          <Button label="Download" fontSize="text-xl" />
-        </a>
+        <div className="flex justify-center w-full">
+          <a ref={downloadLinkRef} className={`${loop ? "" : "invisible"}`}>
+            <Button label="Download" fontSize="text-xl" />
+          </a>
+        </div>
       </div>
     </div>
   );
