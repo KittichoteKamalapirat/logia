@@ -1,0 +1,15 @@
+.input::-webkit-input-placeholder {
+  color: #8b8b8b;
+}
+
+/* Chrome, Safari, Edge, Opera */
+.input_no_spin_buttons::-webkit-outer-spin-button,
+.input_no_spin_buttons::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.input_no_spin_buttons[type="number"] {
+  -moz-appearance: textfield;
+}

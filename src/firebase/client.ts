@@ -17,7 +17,11 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import {
+  getFunctions,
+  httpsCallable,
+  connectFunctionsEmulator,
+} from "firebase/functions";
 import { firebaseConfig } from "./config";
 
 // Initialize Firebase
@@ -26,6 +30,16 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const firestore = getFirestore(app);
 export const functions = getFunctions(app);
+connectFunctionsEmulator(functions, "localhost", 5001);
+
+// cloud-functions
+export const sayHello = httpsCallable(functions, "sayHello");
+export const generateVid = httpsCallable(functions, "generateVid");
+export const loadSecretAndUploadVideo = httpsCallable(
+  functions,
+  "loadSecretAndUploadVideo"
+);
+
 const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {

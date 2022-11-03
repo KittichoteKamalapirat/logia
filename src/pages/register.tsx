@@ -1,8 +1,6 @@
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useDispatch } from "react-redux";
-import { User } from "firebase/auth";
 
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import Button from "../components/Buttons/Button";

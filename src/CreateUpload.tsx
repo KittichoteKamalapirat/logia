@@ -1,8 +1,12 @@
-import getBlobDuration from "get-blob-duration";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import {
+  Control,
+  Controller,
+  FieldError,
+  SubmitHandler,
+  useForm,
+} from "react-hook-form";
 
-import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { Basic } from "unsplash-js/dist/methods/photos/types";
 import AudioCard from "./components/AudioCard";
 import Button from "./components/Buttons/Button";
@@ -12,47 +16,53 @@ import Searchbar from "./components/Searchbar";
 import Spinner from "./components/Spinner";
 import PageHeading from "./components/typography/PageHeading";
 import SubHeading from "./components/typography/SubHeading";
-import { brandName } from "./constants/brand";
 import ProgressBar from "./ProgressBar";
 import { FreeSoundResponse } from "./types/FreeSound";
 import { unsplash } from "./unsplash/unsplash";
 
 import Layout from "./components/layouts/Layout";
 import { Loading } from "./components/Loading";
-import {
-  generateVid,
-  loadSecretAndUploadVideo,
-  sayHello,
-} from "./firebase/client";
+import TextAreaField from "./components/TextAreaField";
+import TextField, { TextFieldTypes } from "./components/TextField";
+import { generateVid, loadSecretAndUploadVideo } from "./firebase/client";
+
+const TITLE_EXAMPLES = [
+  "10 Hours of Rain Sound Relaxation / Ultimate Stress Relief, Deep Sleep, Meditation, Yoga",
+  "Rain On Window with Thunder Sounds - Rain in Forest at Night - 10 Hours",
+  "Rain Sound On Window with Thunder SoundsㅣHeavy Rain for Sleep, Study and Relaxation, Meditation",
+];
+
+enum FormNames {
+  TITLE = "title",
+  DESCRIPTION = "description",
+  IMAGE_URL = "imageUrl",
+  AUDIO_URL = "audioUrl",
+  DURATION_HOURS = "durationHours",
+}
 
 interface FormValues {
+  title: string;
+  description: string;
   imageUrl: string;
-  audioPath: string;
+  audioUrl: string;
   durationHours: string;
 }
 
 const defaultValues: FormValues = {
+  title: "",
+  description: "",
   imageUrl: "",
-  audioPath: "",
+  audioUrl: "",
   durationHours: "0",
 };
 
-interface Props {}
-
-const ffmpeg = createFFmpeg({
-  log: false,
-});
-
-const GenImgVid = ({}: Props) => {
-  const [ready, setReady] = useState(false);
-
+const CreateUpload = () => {
   // unsplash
   const [unsplashPage, setUnsplashPage] = useState(1);
   const [freeSoundPage, setfreeSoundPage] = useState(1);
   const [progressPercent, setProgressPercent] = useState(0);
   const [photos, setPhotos] = useState<Basic[]>();
   const [unsplashQuery, setUnsplashQuery] = useState("rain");
-  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
   // freesound
   const [freeSoundResponse, setFreeSoundResponse] =
@@ -74,18 +84,8 @@ const GenImgVid = ({}: Props) => {
   });
 
   const imgUrl = watch("imageUrl");
-  const audUrl = watch("audioPath");
+  const audUrl = watch("audioUrl");
   const durationHr = watch("durationHours");
-
-  const loadFFmpeg = async () => {
-    try {
-      await ffmpeg.load();
-
-      setReady(true);
-    } catch (error) {
-      console.log("load error", error);
-    }
-  };
 
   // load on scroll starts
 
@@ -165,128 +165,11 @@ const GenImgVid = ({}: Props) => {
     try {
       setIsLoading(true);
 
-      await handleGenLoop(data);
       setIsLoading(false);
     } catch (error) {
       console.log("⛔  error registering");
     }
   };
-
-  const handleGenLoop = async (input: FormValues) => {
-    try {
-      const imgRes = await fetch(input.imageUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        mode: "cors",
-      });
-      const imgBlob = await imgRes.blob();
-      const audRes = await fetch(input.audioPath);
-
-      const audBlob = await audRes.blob();
-
-      const audDuration = await getBlobDuration(audBlob); // in seconds
-
-      const loopNum =
-        input.durationHours !== "12"
-          ? Math.ceil((parseFloat(input.durationHours) * 60 * 60) / audDuration)
-          : Math.floor(
-              (parseFloat(input.durationHours) * 60 * 60) / audDuration
-            ); // Youtube maximum is 12 hours
-
-      // time in secs of the output
-      ffmpeg.setProgress((arg) => {
-        const seconds = parseFloat(input.durationHours) * 60 * 60;
-        const percent = Math.floor(((arg as any).time * 100) / seconds);
-        setProgressPercent(percent);
-      });
-
-      console.log("creating a ", input.durationHours, " hours video");
-      console.log("loop num", loopNum);
-
-      // Write the file to memory
-      console.log("-----blob--------", imgBlob);
-      ffmpeg.FS("writeFile", "image.jpg", await fetchFile(imgBlob));
-      console.log("wrote image");
-
-      ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audBlob));
-
-      console.log("wrote audio");
-
-      // this one works! => 20mins vid 0.04 gb
-
-      await ffmpeg.run(
-        "-r",
-        "1",
-        "-loop",
-        "1",
-        "-i",
-        "image.jpg",
-        "-stream_loop",
-        // "1",
-        String(loopNum), // total will be 1 + loopNum
-        "-i",
-        "audio.mp3",
-        "-acodec",
-        "aac", // if copy => no sound for quicktime, but yes for vlc
-        "-r",
-        "1",
-        "-shortest",
-        "-vf",
-        "scale=1280:720",
-        "out.mp4"
-      );
-
-      // Read the result
-      const data = ffmpeg.FS("readFile", "out.mp4");
-
-      // Create a URL
-      const url = URL.createObjectURL(
-        new Blob([data.buffer], { type: "video/mp4" })
-      );
-
-      // if download
-      const link = downloadLinkRef.current as HTMLAnchorElement;
-      // H265 works but no sound
-      // H264 works but no sound
-      //
-      const linkHref = URL.createObjectURL(
-        new Blob([data.buffer], { type: "video/mp4" })
-      );
-
-      link.href = linkHref;
-      link.download = `${freeSoundQuery}-video-${brandName}`;
-      link.click();
-
-      setLoop(url);
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  useEffect(() => {
-    loadFFmpeg();
-  }, []);
-
-  // useEffect(() => {
-  //   const fetchUnsplash = async () => {
-  //     const response = await fetch(
-  //       `https://api.unsplash.com/photos?client_id=${
-  //         import.meta.env.VITE_UNSPLASH_ACCESS_KEY
-  //       }`
-  //     );
-  //     const data = await response.json();
-  //     console.log(
-  //       "VITE_UNSPLASH_ACCESS_KEY",
-  //       import.meta.env.VITE_UNSPLASH_ACCESS_KEY
-  //     );
-
-  //     console.log("data", data);
-  //   };
-
-  //   fetchUnsplash();
-  // }, []);
 
   const handleSearchUnsplash = (query: string) => {
     unsplash.search
@@ -336,20 +219,14 @@ const GenImgVid = ({}: Props) => {
     setUnsplashPage(unsplashPage + 1);
   }, []);
 
-  if (!ready)
-    return (
-      <Layout>
-        <Loading isFullPage={true} />
-      </Layout>
-    );
   return (
-    <div>
+    <div className="sm:f-ull lg:w-3/4">
       <PageHeading
         heading="Create Chill Rain Videos"
         extraClass="font-bold text-center mb-10"
       />
 
-      <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="grid sm:grid-cols-1 md:grid-cols-1 gap-2 ">
         <div id="left" className="col-span-1">
           {/* Select Vids Section */}
           <SubHeading
@@ -431,7 +308,7 @@ const GenImgVid = ({}: Props) => {
             <div className="grid grid-cols-1 gap-4 mt-4">
               {freeSoundResponse?.results.map((sound, index) => {
                 const previewUrl = sound.previews["preview-lq-mp3"];
-                const currentAudPath = watch("audioPath");
+                const currentAudPath = watch("audioUrl");
                 const selectedClass =
                   "border-2 border-primary-500 border-solid rounded-md bg-primary-50";
                 const isSelected = currentAudPath === previewUrl;
@@ -451,12 +328,12 @@ const GenImgVid = ({}: Props) => {
                   >
                     <input
                       id={String(sound.id)}
-                      {...register("audioPath", {
+                      {...register("audioUrl", {
                         required: "Please select an audio",
                       })}
                       type="radio"
                       value={previewUrl} // for react-hook-form
-                      name="audioPath"
+                      name="audioUrl"
                       className="w-4 h-4 invisible"
                     />
 
@@ -468,8 +345,8 @@ const GenImgVid = ({}: Props) => {
                 );
               })}
             </div>
-            {errors.audioPath && (
-              <p className="text-red">{errors.audioPath.message}</p>
+            {errors.audioUrl && (
+              <p className="text-red">{errors.audioUrl.message}</p>
             )}
           </div>
         </div>
@@ -521,6 +398,39 @@ const GenImgVid = ({}: Props) => {
         </div>
       </div>
 
+      {/* metadata */}
+
+      <div>
+        <SubHeading
+          heading="4. Add metadata"
+          extraClass="text-left text-xl mb-4 font-bold"
+        />
+        <div className="mb-10">
+          <TextField
+            required
+            name={FormNames.TITLE}
+            control={control as unknown as Control}
+            label="Video Title on Youtube"
+            type={TextFieldTypes.OUTLINED}
+            error={errors[FormNames.TITLE]}
+          />
+          <ul>
+            Ex.{" "}
+            {TITLE_EXAMPLES.map((title, index) => (
+              <li key={index}>- {title}</li>
+            ))}
+          </ul>
+        </div>
+
+        <TextAreaField
+          required
+          {...register(FormNames.DESCRIPTION, {})}
+          label="Description on Youtube"
+          labelClass="text-grey-420"
+          error={errors[FormNames.DESCRIPTION] as FieldError}
+        />
+      </div>
+
       {loop ? (
         <video
           key="asdadsff"
@@ -561,13 +471,27 @@ const GenImgVid = ({}: Props) => {
           </div>
         )}
 
-        <div className="flex justify-center w-full">
-          <a ref={downloadLinkRef} className={`${loop ? "" : "invisible"}`}>
-            <Button label="Download" fontSize="text-xl" />
-          </a>
-        </div>
+        <Button
+          label="Gen in backend"
+          onClick={() => {
+            generateVid({ imgUrl, audUrl, durationHr });
+          }}
+        />
+
+        <Button
+          label="Upload to youtube"
+          onClick={() => {
+            console.log("hi 5");
+            loadSecretAndUploadVideo({
+              title: "title",
+              descirption: "description",
+              tags: ["tags"],
+            });
+            console.log("hi 6");
+          }}
+        />
       </div>
     </div>
   );
 };
-export default GenImgVid;
+export default CreateUpload;

@@ -1,6 +1,4 @@
 import React from "react";
-import Link from "next/link";
-import { XCenter } from "./layouts/XCenter";
 import { brandName } from "../constants/brand";
 
 interface FooterProps {}

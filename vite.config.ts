@@ -6,17 +6,18 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [
     react(),
-    {
-      name: "configure-response-headers",
-      configureServer: (server) => {
-        server.middlewares.use((_req, res, next) => {
-          // res.setHeader("Cross-Origin-Resource-Policy", "same-site"); // no need this line to be crossOriginIsolated
-          res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-          res.setHeader("Cross-Origin-Opener-Policy", "same-origin"); // allow popup not working
-          next();
-        });
-      },
-    },
+    crossOriginIsolation(),
+    // {
+    //   name: "configure-response-headers",
+    //   configureServer: (server) => {
+    //     server.middlewares.use((_req, res, next) => {
+    //       // res.setHeader("Cross-Origin-Resource-Policy", "same-site"); // no need this line to be crossOriginIsolated
+    //       res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    //       res.setHeader("Cross-Origin-Opener-Policy", "same-origin"); // allow popup not working
+    //       next();
+    //     });
+    //   },
+    // },
   ],
   // under the hood
   //   {

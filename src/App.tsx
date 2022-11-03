@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
+import CreateUploadPage from "./pages/create-upload";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           <Route index path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/create-upload" element={<CreateUploadPage />} />
           {/* <Route index element={<Home />} /> */}
           {/* <Route path="teams" element={<Teams />}>
           <Route path=":teamId" element={<Team />} />

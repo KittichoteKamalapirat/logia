@@ -3,15 +3,28 @@ import Spinner from "./Spinner";
 
 interface LoadingProps {
   text?: string;
-  overlay?: boolean;
+  flexDirection?: "row" | "column";
+  isFullPage?: boolean;
 }
 
-export const Loading: React.FC<LoadingProps> = ({ text }) => {
+export const Loading: React.FC<LoadingProps> = ({
+  text,
+  flexDirection = "column",
+  isFullPage = false,
+}) => {
   return (
-    <div className="flex justify-center items-center">
-      <div className="flex justify-center items-center">
+    <div
+      className={`flex justify-center items-center ${
+        isFullPage ? "h-[70vh]" : ""
+      }`}
+    >
+      <div
+        className={`flex justify-center items-center ${
+          flexDirection === "column" ? "flex-col" : ""
+        }`}
+      >
         <Spinner />
-        <p className="text-primary-500 font-bold">
+        <p className="text-primary-primary font-bold">
           {text ? text : "Loading..."}
         </p>
       </div>

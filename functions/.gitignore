@@ -1,0 +1,13 @@
+# Compiled JavaScript files
+lib/**/*.js
+lib/**/*.js.map
+
+# TypeScript v1 declaration files
+typings/
+
+# Node.js dependency directory
+node_modules/
+tmp/
+
+# Path to admin credentials for emulated functions
+logia-65ffc-36205a540f3f.json
