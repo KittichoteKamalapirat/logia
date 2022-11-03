@@ -125,7 +125,7 @@ const Button = ({
       aria-label={ariaLabel ?? label}
     >
       <div className="flex flex-row items-center justify-center">
-        {loading && <Spinner size={4} color="yellow" />}
+        {loading && <Spinner size="w-8 h-8" color="yellow" />}
         {startIcon && <div className="mr-2.5">{startIcon}</div>}
         {label}
       </div>

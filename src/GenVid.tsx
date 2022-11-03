@@ -38,7 +38,7 @@ const ffmpeg = createFFmpeg({
 
 const GenVid = ({}: Props) => {
   const [ready, setReady] = useState(false);
-  const downloadLinkRef = useRef<HTMLAnchorElement>();
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 

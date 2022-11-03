@@ -1,9 +1,5 @@
-import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
 import { UploadedFile } from ".";
-import { createUpload } from "../../redux/slices/uploadReducer";
-import { roundCloudinaryImg } from "../../utils/roundCloudinaryImg";
 
 interface Props {
   acceptedFiles: File[];
@@ -24,8 +20,6 @@ const useUploadFiles = ({
 }: Props) => {
   const [uploadError, setUploadError] = useState("");
   const [uploadIsLoading, setUploadIsLoading] = useState(false);
-
-  const dispatch = useDispatch();
 
   useEffect(() => {
     const handleS3Upload = async () => {
@@ -90,16 +84,6 @@ const useUploadFiles = ({
           const data = await response.json();
 
           console.log("data", data);
-
-          dispatch(
-            createUpload({
-              // key: fields.key, TODO
-              key: data.public_id,
-              name: `${data.original_filename}.${data.format}`,
-              presignedUrl: roundCloudinaryImg(data.secure_url, "r_45"),
-              uploadedAt: data.created_at,
-            })
-          );
         } catch (error) {
           console.log("error", error);
           setUploadError(`There was an error with your ${file.name} upload`);

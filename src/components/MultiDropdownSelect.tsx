@@ -1,22 +1,37 @@
-import { components, GroupBase, Props, ValueContainerProps } from "react-select";
+import {
+  components,
+  GroupBase,
+  Props,
+  ValueContainerProps,
+} from "react-select";
 
-import { Icon } from "@calcom/ui/Icon";
+import { FiPlus } from "react-icons/fi";
+import Select from "./select";
 
-import { Select } from "../..";
-
-const LimitedChipsContainer = <Option, IsMulti extends boolean, Group extends GroupBase<Option>>({
+const LimitedChipsContainer = <
+  Option,
+  IsMulti extends boolean,
+  Group extends GroupBase<Option>
+>({
   children,
   ...props
 }: ValueContainerProps<Option, IsMulti, Group>) => {
   if (!props.hasValue) {
-    return <components.ValueContainer {...props}>{children as React.ReactNode[]}</components.ValueContainer>;
+    return (
+      <components.ValueContainer {...props}>
+        {children as React.ReactNode[]}
+      </components.ValueContainer>
+    );
   }
   const CHIPS_LIMIT = 2;
   // TODO:: fix the following ts error
   // @ts-expect-error: @see children is an array but identified as object resulting in the error
   const [chips, other] = children;
   const overflowCounter = chips.slice(CHIPS_LIMIT).length;
-  const displayChips = chips.slice(overflowCounter, overflowCounter + CHIPS_LIMIT);
+  const displayChips = chips.slice(
+    overflowCounter,
+    overflowCounter + CHIPS_LIMIT
+  );
 
   return (
     <components.ValueContainer {...props}>
@@ -24,7 +39,8 @@ const LimitedChipsContainer = <Option, IsMulti extends boolean, Group extends Gr
       {overflowCounter > 0 && (
         <span className="flex items-center justify-center rounded-md bg-gray-100 py-[5px] px-2 text-[14px] font-medium leading-4 text-gray-700">
           <>
-            <Icon.FiPlus className="mr-1 inline h-3 w-3 stroke-[3px]" /> <span>{overflowCounter} more</span>
+            <FiPlus className="mr-1 inline h-3 w-3 stroke-[3px]" />{" "}
+            <span>{overflowCounter} more</span>
           </>
         </span>
       )}
@@ -33,7 +49,11 @@ const LimitedChipsContainer = <Option, IsMulti extends boolean, Group extends Gr
   );
 };
 
-export const MultiDropdownSelect = ({ options = [], value = [], ...props }: Props) => {
+export const MultiDropdownSelect = ({
+  options = [],
+  value = [],
+  ...props
+}: Props) => {
   // const { t } = useLocale();
 
   return (
